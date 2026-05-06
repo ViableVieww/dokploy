@@ -99,6 +99,13 @@ docker run -d \
   -e DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_CONTAINER}:5432/${POSTGRES_DB}" \
   "${DOKPLOY_IMAGE}" >/dev/null
 
+echo "==> Ensuring Traefik exists"
+if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
+  && ! docker service ls --format '{{.Name}}' 2>/dev/null | grep -qx "dokploy-traefik"; then
+  echo "==> Traefik not found, running Dokploy setup"
+  docker exec "${DOKPLOY_CONTAINER}" sh -lc "cd /app && pnpm run setup" || true
+fi
+
 echo "==> Done"
 echo "Dokploy URL: http://localhost:${APP_PORT}"
 echo "Logs: docker logs -f ${DOKPLOY_CONTAINER}"
