@@ -105,6 +105,25 @@ docker network connect dokploy-network "${DOKPLOY_CONTAINER}" >/dev/null 2>&1 ||
 echo "==> Ensuring Traefik exists"
 if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
   && ! docker service ls --format '{{.Name}}' 2>/dev/null | grep -qx "dokploy-traefik"; then
+  mkdir -p /etc/dokploy/traefik/dynamic
+  if [ ! -f /etc/dokploy/traefik/traefik.yml ]; then
+    cat > /etc/dokploy/traefik/traefik.yml <<'EOF'
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: dokploy-network
+  file:
+    directory: /etc/dokploy/traefik/dynamic
+    watch: true
+EOF
+  fi
   echo "==> Traefik not found, starting standalone Traefik container"
   docker run -d \
     --name dokploy-traefik \
@@ -112,13 +131,10 @@ if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
     --network dokploy-network \
     -p 80:80 \
     -p 443:443 \
+    -v /etc/dokploy/traefik/traefik.yml:/etc/traefik/traefik.yml \
+    -v /etc/dokploy/traefik/dynamic:/etc/dokploy/traefik/dynamic \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    traefik:v3.6.7 \
-    --providers.docker=true \
-    --providers.docker.exposedbydefault=false \
-    --providers.docker.network=dokploy-network \
-    --entrypoints.web.address=:80 \
-    --entrypoints.websecure.address=:443 >/dev/null || true
+    traefik:v3.6.7 >/dev/null || true
 fi
 
 echo "==> Done"
