@@ -320,6 +320,13 @@ const MENU: Menu = {
 		},
 		{
 			isSingle: true,
+			title: "Custom Audit Logs",
+			icon: ClipboardList,
+			url: "/dashboard/settings/custom-audit-logs",
+			isEnabled: ({ permissions }) => !!permissions?.auditLog.read,
+		},
+		{
+			isSingle: true,
 			title: "SSH Keys",
 			icon: KeyRound,
 			url: "/dashboard/settings/ssh-keys",
