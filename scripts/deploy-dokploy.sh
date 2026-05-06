@@ -109,7 +109,33 @@ if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
     if command -v tsx >/dev/null 2>&1; then
       pnpm run setup
     else
-      node -r dotenv/config dist/setup.mjs
+      node --input-type=module -e "
+        import { exec as _exec } from \"node:child_process\";
+        import { promisify } from \"node:util\";
+        import { setupDirectories } from \"@dokploy/server/setup/config-paths\";
+        import { initializePostgres } from \"@dokploy/server/setup/postgres-setup\";
+        import { initializeRedis } from \"@dokploy/server/setup/redis-setup\";
+        import { initializeNetwork, initializeSwarm } from \"@dokploy/server/setup/setup\";
+        import {
+          createDefaultMiddlewares,
+          createDefaultServerTraefikConfig,
+          createDefaultTraefikConfig,
+          initializeStandaloneTraefik,
+          TRAEFIK_VERSION
+        } from \"@dokploy/server/setup/traefik-setup\";
+
+        const execAsync = promisify(_exec);
+        setupDirectories();
+        createDefaultMiddlewares();
+        await initializeSwarm();
+        await initializeNetwork();
+        createDefaultTraefikConfig();
+        createDefaultServerTraefikConfig();
+        await execAsync(\`docker pull traefik:v\${TRAEFIK_VERSION}\`);
+        await initializeStandaloneTraefik();
+        await initializeRedis();
+        await initializePostgres();
+      "
       sleep 5
       node -r dotenv/config dist/migration.mjs
     fi
