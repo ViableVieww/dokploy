@@ -1,7 +1,6 @@
 import { db } from "@dokploy/server/db";
 import type { AuditAction, AuditResourceType } from "@dokploy/server/db/schema";
-import { auditLog } from "@dokploy/server/db/schema";
-import { hasValidLicense } from "@dokploy/server/services/proprietary/license-key";
+import { auditLog, member } from "@dokploy/server/db/schema";
 import { and, desc, eq, gte, ilike, lte } from "drizzle-orm";
 
 export type { AuditAction, AuditResourceType };
@@ -24,11 +23,29 @@ export interface CreateAuditLogInput {
  */
 export const createAuditLog = async (input: CreateAuditLogInput) => {
 	try {
-		const licensed = await hasValidLicense(input.organizationId);
-		if (!licensed) return;
+		let organizationId = input.organizationId;
+
+		// Fallback when request/session context has no active org yet.
+		if (!organizationId) {
+			const memberRecord = await db.query.member.findFirst({
+				where: eq(member.userId, input.userId),
+				orderBy: [desc(member.isDefault), desc(member.createdAt)],
+			});
+			organizationId = memberRecord?.organizationId || "";
+		}
+
+		if (!organizationId) {
+			console.error("[audit-log] Skipped: no organization id", {
+				userId: input.userId,
+				action: input.action,
+				resourceType: input.resourceType,
+				resourceName: input.resourceName,
+			});
+			return;
+		}
 
 		await db.insert(auditLog).values({
-			organizationId: input.organizationId,
+			organizationId,
 			userId: input.userId,
 			userEmail: input.userEmail,
 			userRole: input.userRole,
@@ -39,7 +56,10 @@ export const createAuditLog = async (input: CreateAuditLogInput) => {
 			metadata: input.metadata ? JSON.stringify(input.metadata) : undefined,
 		});
 	} catch (err) {
-		console.error("[audit-log] Failed to create audit log entry:", err);
+		console.error("[audit-log] Failed to create audit log entry:", {
+			error: err instanceof Error ? err.message : err,
+			input,
+		});
 	}
 };
 

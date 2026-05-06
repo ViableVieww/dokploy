@@ -7,7 +7,6 @@ import { TRPCError } from "@trpc/server";
 import { apiUpdateWhitelabeling } from "@/server/db/schema";
 import {
 	createTRPCRouter,
-	enterpriseProcedure,
 	protectedProcedure,
 	publicProcedure,
 } from "../../trpc";
@@ -21,7 +20,7 @@ export const whitelabelingRouter = createTRPCRouter({
 		return settings?.whitelabelingConfig ?? null;
 	}),
 
-	update: enterpriseProcedure
+	update: protectedProcedure
 		.input(apiUpdateWhitelabeling)
 		.mutation(async ({ input, ctx }) => {
 			if (IS_CLOUD) {
@@ -45,7 +44,7 @@ export const whitelabelingRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	reset: enterpriseProcedure.mutation(async ({ ctx }) => {
+	reset: protectedProcedure.mutation(async ({ ctx }) => {
 		if (IS_CLOUD) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
