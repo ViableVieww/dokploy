@@ -335,8 +335,15 @@ export const settingsRouter = createTRPCRouter({
 			}
 
 			updateServerTraefik(settings, input.host);
-			if (input.letsEncryptEmail) {
+			if (
+				input.letsEncryptEmail
+			) {
 				updateLetsEncryptEmail(input.letsEncryptEmail);
+				// Traefik reads ACME resolver email from static config at startup.
+				// Reload to apply the updated email from UI immediately.
+				void reloadDockerResource("dokploy-traefik").catch((err) => {
+					console.error("assignDomainServer reloadTraefik background:", err);
+				});
 			}
 
 			await audit(ctx, {
