@@ -33,6 +33,7 @@ import { customRoleRouter } from "./routers/proprietary/custom-role";
 import { licenseKeyRouter } from "./routers/proprietary/license-key";
 import { ssoRouter } from "./routers/proprietary/sso";
 import { whitelabelingRouter } from "./routers/proprietary/whitelabeling";
+import { customAuditLogRouter } from "./routers/custom-audit-log";
 import { redirectsRouter } from "./routers/redirects";
 import { redisRouter } from "./routers/redis";
 import { registryRouter } from "./routers/registry";
@@ -96,6 +97,7 @@ export const appRouter = createTRPCRouter({
 	whitelabeling: whitelabelingRouter,
 	customRole: customRoleRouter,
 	auditLog: auditLogRouter,
+	customAuditLog: customAuditLogRouter,
 	schedule: scheduleRouter,
 	rollback: rollbackRouter,
 	volumeBackups: volumeBackupsRouter,

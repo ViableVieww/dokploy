@@ -4,17 +4,13 @@ import type { GetServerSidePropsContext } from "next";
 import type { ReactElement } from "react";
 import superjson from "superjson";
 import { DashboardLayout } from "@/components/layouts/dashboard-layout";
-import { ShowAuditLogsCard } from "@/components/proprietary/audit-logs/show-audit-logs";
+import { ShowCustomAuditLogs } from "@/components/proprietary/audit-logs/show-custom-audit-logs";
 import { appRouter } from "@/server/api/root";
 
 const Page = () => {
 	return (
 		<div className="flex flex-col gap-4 w-full">
-			<ShowAuditLogsCard
-				title="Custom Audit Logs"
-				description="Track custom actions performed by members in your organization."
-				requireEnterprise={false}
-			/>
+			<ShowCustomAuditLogs />
 		</div>
 	);
 };
