@@ -22,6 +22,7 @@ POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-amukds4wi9001583845717ad2}"
 APP_PORT="${APP_PORT:-3000}"
 NETWORK_NAME="${NETWORK_NAME:-dokploy-net}"
 ENABLE_SWARM_INIT="${ENABLE_SWARM_INIT:-true}"
+LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-admin@example.com}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env.production"
@@ -105,8 +106,7 @@ docker network connect dokploy-network "${DOKPLOY_CONTAINER}" >/dev/null 2>&1 ||
 echo "==> Ensuring Traefik exists"
 echo "==> Preparing /etc/dokploy/traefik"
 sudo mkdir -p /etc/dokploy/traefik/dynamic
-if [ ! -f /etc/dokploy/traefik/traefik.yml ]; then
-  sudo tee /etc/dokploy/traefik/traefik.yml >/dev/null <<'EOF'
+sudo tee /etc/dokploy/traefik/traefik.yml >/dev/null <<EOF
 entryPoints:
   web:
     address: ":80"
@@ -121,8 +121,17 @@ providers:
   file:
     directory: /etc/dokploy/traefik/dynamic
     watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: ${LETSENCRYPT_EMAIL}
+      storage: /etc/dokploy/traefik/acme.json
+      httpChallenge:
+        entryPoint: web
 EOF
-fi
+sudo touch /etc/dokploy/traefik/acme.json
+sudo chmod 600 /etc/dokploy/traefik/acme.json
 
 if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
   && ! docker service ls --format '{{.Name}}' 2>/dev/null | grep -qx "dokploy-traefik"; then
@@ -135,6 +144,7 @@ if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
     -p 443:443 \
     -v /etc/dokploy/traefik/traefik.yml:/etc/traefik/traefik.yml \
     -v /etc/dokploy/traefik/dynamic:/etc/dokploy/traefik/dynamic \
+    -v /etc/dokploy/traefik/acme.json:/etc/dokploy/traefik/acme.json \
     -v /var/run/docker.sock:/var/run/docker.sock \
     traefik:v3.6.7 >/dev/null || true
 fi
