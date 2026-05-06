@@ -103,11 +103,10 @@ docker run -d \
 docker network connect dokploy-network "${DOKPLOY_CONTAINER}" >/dev/null 2>&1 || true
 
 echo "==> Ensuring Traefik exists"
-if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
-  && ! docker service ls --format '{{.Name}}' 2>/dev/null | grep -qx "dokploy-traefik"; then
-  mkdir -p /etc/dokploy/traefik/dynamic
-  if [ ! -f /etc/dokploy/traefik/traefik.yml ]; then
-    cat > /etc/dokploy/traefik/traefik.yml <<'EOF'
+echo "==> Preparing /etc/dokploy/traefik"
+sudo mkdir -p /etc/dokploy/traefik/dynamic
+if [ ! -f /etc/dokploy/traefik/traefik.yml ]; then
+  sudo tee /etc/dokploy/traefik/traefik.yml >/dev/null <<'EOF'
 entryPoints:
   web:
     address: ":80"
@@ -123,7 +122,10 @@ providers:
     directory: /etc/dokploy/traefik/dynamic
     watch: true
 EOF
-  fi
+fi
+
+if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
+  && ! docker service ls --format '{{.Name}}' 2>/dev/null | grep -qx "dokploy-traefik"; then
   echo "==> Traefik not found, starting standalone Traefik container"
   docker run -d \
     --name dokploy-traefik \
