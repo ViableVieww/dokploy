@@ -103,7 +103,17 @@ echo "==> Ensuring Traefik exists"
 if ! docker ps --format '{{.Names}}' | grep -qx "dokploy-traefik" \
   && ! docker service ls --format '{{.Name}}' 2>/dev/null | grep -qx "dokploy-traefik"; then
   echo "==> Traefik not found, running Dokploy setup"
-  docker exec "${DOKPLOY_CONTAINER}" sh -lc "cd /app && pnpm run setup" || true
+  docker exec "${DOKPLOY_CONTAINER}" sh -lc '
+    set -e
+    cd /app
+    if command -v tsx >/dev/null 2>&1; then
+      pnpm run setup
+    else
+      node -r dotenv/config dist/setup.mjs
+      sleep 5
+      node -r dotenv/config dist/migration.mjs
+    fi
+  ' || true
 fi
 
 echo "==> Done"

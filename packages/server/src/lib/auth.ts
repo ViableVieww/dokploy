@@ -28,6 +28,8 @@ import {
 import { getPublicIpWithFallback } from "../wss/utils";
 import { ac, adminRole, memberRole, ownerRole } from "./access-control";
 
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+
 const { handler, api } = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "pg",
@@ -58,8 +60,15 @@ const { handler, api } = betterAuth({
 		accountLinking: {
 			enabled: true,
 			async trustedProviders() {
-				const fromDb = await getTrustedProviders();
-				return ["github", "google", ...fromDb];
+				if (isBuildPhase) {
+					return ["github", "google"];
+				}
+				try {
+					const fromDb = await getTrustedProviders();
+					return ["github", "google", ...fromDb];
+				} catch {
+					return ["github", "google"];
+				}
 			},
 			allowDifferentEmails: true,
 		},
@@ -79,6 +88,9 @@ const { handler, api } = betterAuth({
 		disabled: process.env.NODE_ENV === "production",
 	},
 	async trustedOrigins() {
+		if (isBuildPhase) {
+			return [];
+		}
 		try {
 			if (IS_CLOUD) {
 				return await getTrustedOrigins();
@@ -102,7 +114,7 @@ const { handler, api } = betterAuth({
 				...trustedOrigins,
 			];
 		} catch (error) {
-			console.error("Failed to resolve trusted origins:", error);
+			// During build/runtime race conditions, return safe fallback.
 			return [];
 		}
 	},
