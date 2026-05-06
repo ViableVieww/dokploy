@@ -98,6 +98,7 @@ docker run -d \
   --restart unless-stopped \
   -p "${APP_PORT}:3000" \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /etc/dokploy/traefik:/etc/dokploy/traefik \
   -e DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_CONTAINER}:5432/${POSTGRES_DB}" \
   "${DOKPLOY_IMAGE}" >/dev/null
 
