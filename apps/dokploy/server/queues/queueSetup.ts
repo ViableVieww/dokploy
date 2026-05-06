@@ -17,7 +17,9 @@ const createNoopQueue = () => ({
 	on: () => {},
 });
 
-const myQueue = !IS_CLOUD
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+
+const myQueue = !IS_CLOUD && !isBuildPhase
 	? new Queue("deployments", { connection: redisConfig })
 	: (createNoopQueue() as unknown as Queue);
 
@@ -31,7 +33,7 @@ export const getJobsByComposeId = async (composeId: string) => {
 	return jobs.filter((job) => job?.data?.composeId === composeId);
 };
 
-if (!IS_CLOUD) {
+if (!IS_CLOUD && !isBuildPhase) {
 	process.on("SIGTERM", () => {
 		myQueue.close();
 		process.exit(0);
