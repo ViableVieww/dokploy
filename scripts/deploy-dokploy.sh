@@ -21,6 +21,7 @@ POSTGRES_USER="${POSTGRES_USER:-dokploy}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-amukds4wi9001583845717ad2}"
 APP_PORT="${APP_PORT:-3000}"
 NETWORK_NAME="${NETWORK_NAME:-dokploy-net}"
+ENABLE_SWARM_INIT="${ENABLE_SWARM_INIT:-true}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env.production"
@@ -37,6 +38,13 @@ require_cmd docker
 if ! docker info >/dev/null 2>&1; then
   echo "Error: docker daemon is not running"
   exit 1
+fi
+
+if [ "${ENABLE_SWARM_INIT}" = "true" ]; then
+  if ! docker info --format '{{.Swarm.LocalNodeState}}' | grep -qx "active"; then
+    echo "==> Initializing Docker Swarm"
+    docker swarm init >/dev/null || true
+  fi
 fi
 
 echo "==> Preparing ${ENV_FILE}"
