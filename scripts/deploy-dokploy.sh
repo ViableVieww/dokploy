@@ -15,6 +15,7 @@ set -euo pipefail
 DOKPLOY_IMAGE="${DOKPLOY_IMAGE:-dokploy/dokploy:local}"
 DOKPLOY_CONTAINER="${DOKPLOY_CONTAINER:-dokploy}"
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-dokploy-postgres}"
+REDIS_CONTAINER="${REDIS_CONTAINER:-dokploy-redis}"
 POSTGRES_DB="${POSTGRES_DB:-dokploy}"
 POSTGRES_USER="${POSTGRES_USER:-dokploy}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-amukds4wi9001583845717ad2}"
@@ -60,6 +61,17 @@ else
     -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
     -v dokploy_postgres_data:/var/lib/postgresql/data \
     postgres:16-alpine >/dev/null
+fi
+
+echo "==> Starting redis ${REDIS_CONTAINER}"
+if docker ps -a --format '{{.Names}}' | grep -qx "${REDIS_CONTAINER}"; then
+  docker start "${REDIS_CONTAINER}" >/dev/null
+else
+  docker run -d \
+    --name "${REDIS_CONTAINER}" \
+    --network "${NETWORK_NAME}" \
+    --restart unless-stopped \
+    redis:7-alpine >/dev/null
 fi
 
 echo "==> Building ${DOKPLOY_IMAGE}"
