@@ -13,8 +13,7 @@ const Page = () => {
 			<ShowAuditLogsCard
 				title="Custom Audit Logs"
 				description="Track custom actions performed by members in your organization."
-				lockedDescription="Get full visibility into every custom action performed across your organization. Custom audit logs are available as part of Dokploy Enterprise."
-				ctaLabel="Manage License"
+				requireEnterprise={false}
 			/>
 		</div>
 	);

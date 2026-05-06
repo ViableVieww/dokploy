@@ -90,6 +90,7 @@ type ShowAuditLogsCardProps = {
 	description?: string;
 	lockedDescription?: string;
 	ctaLabel?: string;
+	requireEnterprise?: boolean;
 };
 
 export function ShowAuditLogsCard({
@@ -97,28 +98,39 @@ export function ShowAuditLogsCard({
 	description = "Track all actions performed by members in your organization.",
 	lockedDescription = "Get full visibility into every action performed across your organization. Audit logs are available as part of Dokploy Enterprise.",
 	ctaLabel = "Manage License",
+	requireEnterprise = true,
 }: ShowAuditLogsCardProps = {}) {
+	const content = (
+		<>
+			<CardHeader>
+				<CardTitle className="text-xl flex flex-row gap-2">
+					<ClipboardList className="h-5 w-5 text-muted-foreground self-center" />
+					{title}
+				</CardTitle>
+				<CardDescription>{description}</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-2 py-8 border-t">
+				<AuditLogsContent />
+			</CardContent>
+		</>
+	);
+
 	return (
 		<Card className="h-full bg-sidebar p-2.5 rounded-xl max-w-6xl w-full mx-auto">
 			<div className="rounded-xl bg-background shadow-md ">
-				<EnterpriseFeatureGate
-					lockedProps={{
-						title,
-						description: lockedDescription,
-						ctaLabel,
-					}}
-				>
-					<CardHeader>
-						<CardTitle className="text-xl flex flex-row gap-2">
-							<ClipboardList className="h-5 w-5 text-muted-foreground self-center" />
-							{title}
-						</CardTitle>
-						<CardDescription>{description}</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-2 py-8 border-t">
-						<AuditLogsContent />
-					</CardContent>
-				</EnterpriseFeatureGate>
+				{requireEnterprise ? (
+					<EnterpriseFeatureGate
+						lockedProps={{
+							title,
+							description: lockedDescription,
+							ctaLabel,
+						}}
+					>
+						{content}
+					</EnterpriseFeatureGate>
+				) : (
+					content
+				)}
 			</div>
 		</Card>
 	);
